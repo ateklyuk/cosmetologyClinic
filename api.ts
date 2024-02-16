@@ -18,12 +18,12 @@ const AMO_TOKEN_PATH = "amo_token.json";
 const LIMIT = 200;
 
 
-export default class Api{
+export default new class Api{
 	access_token: null | string = null;
 	refresh_token: null | string = null;
 	ROOT_PATH: string = `https://${config.SUB_DOMAIN}.amocrm.ru`;
 
-	authChecker = <T, U>(request: (args: T) => Promise<U>): ((args: T) => Promise<U>) => {
+	authChecker = <T, U>(request: (...args: T[]) => Promise<U>): ((...args: T[]) => Promise<U>) => {
 		return (...args) => {
 			if (!this.access_token) {
 				return this.getAccessToken().then(() => this.authChecker(request)(...args));
@@ -65,17 +65,17 @@ export default class Api{
 			});
 	};
 
-	getAccessToken = async (): Promise<GetTokenRes | String | any> => {
+	getAccessToken = async (): Promise<string > => {
 		if (this.access_token) {
 			return Promise.resolve(this.access_token);
 		}
 		try {
 			const content = fs.readFileSync(AMO_TOKEN_PATH);
 			const token = JSON.parse(content.toString());
-			console.log(token)
+			console.log(token.access_token)
 			this.access_token = token.access_token;
 			this.refresh_token = token.refresh_token;
-			return Promise.resolve(token);
+			return Promise.resolve(token.access_token);
 		} catch (error) {
 			logger.error(`Ошибка при чтении файла ${AMO_TOKEN_PATH}`, error);
 			logger.debug("Попытка заново получить токен");
@@ -83,7 +83,7 @@ export default class Api{
 			fs.writeFileSync(AMO_TOKEN_PATH, JSON.stringify(token));
 			this.access_token = token.access_token;
 			this.refresh_token = token.refresh_token;
-			return Promise.resolve(token);
+			return Promise.resolve(token.access_token);
 		}
 	};
 	refreshToken = () =>  {
@@ -110,7 +110,7 @@ export default class Api{
 	};
 
 	// Получить сделку по id
-	getDeal = this.authChecker((id, withParam = []) => {
+	getDeal = this.authChecker((id, withParam: string[] = []) => {
 		return axios
 			.get<GetDealRes>(
 				`${this.ROOT_PATH}/api/v4/leads/${id}?${querystring.encode({

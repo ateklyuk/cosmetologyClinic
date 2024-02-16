@@ -22,7 +22,7 @@ export type Request = {
 	id: number,
 	limit: number,
 	page: number,
-	filters: number[],
+	filters: string,
 }
 export type CustomField = {
 	field_id: number,

@@ -72,7 +72,7 @@ export const bulkOperation = async <T extends Array<string>>(
 	request: (args: string[]) => Promise<string>,
 	data: T,
 	chunkSize: number,
-	operationName = "bulk"
+	operationName: string = "bulk"
 ) => {
 	let failed = [];
 	if (data.length) {
