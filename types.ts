@@ -12,7 +12,15 @@ export type GetTokenRes = {
 	access_token: string,
 	refresh_token: string
 }
-export type GetDealRes = {}
+export type GetDealRes = {
+	price: number,
+	_embedded: {
+		contacts:[{
+			id: number,
+			is_main: boolean
+		}]
+		},
+}
 export type GetDealsRes = {
 	_page: number,
 	_links: {},

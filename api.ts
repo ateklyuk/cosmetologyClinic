@@ -72,7 +72,6 @@ export default new class Api{
 		try {
 			const content = fs.readFileSync(AMO_TOKEN_PATH);
 			const token = JSON.parse(content.toString());
-			console.log(token.access_token)
 			this.access_token = token.access_token;
 			this.refresh_token = token.refresh_token;
 			return Promise.resolve(token.access_token);
