@@ -6,6 +6,8 @@ import express from "express";
 import api from "./api";
 import {logger} from "./logger";
 import {config} from "./config";
+import {Request} from "express";
+import {dealHandler} from "./hookHandlers/dealChangeHandler"
 
 const app = express();
 
@@ -14,9 +16,7 @@ app.use(express.urlencoded({extended: true}));
 api.getAccessToken().then(() => {
 	app.get("/ping", (req, res) => res.send("pong " + Date.now()));
 
-	app.post("/hook", (req, res) => {
-		res.send("OK");
-	});
+	app.post("/changedeal", dealHandler);
 
 	app.listen(config.PORT, () => logger.debug("Server started on ", config.PORT));
 });
