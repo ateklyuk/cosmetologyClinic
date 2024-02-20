@@ -1,3 +1,4 @@
+
 export type Config = {
 	CLIENT_ID: string,
 	CLIENT_SECRET: string,
@@ -16,11 +17,11 @@ export type PostTokenData = {
 }
 
 export type RequestQuery = {
-	id?: number,
-	limit?: number,
-	page?: number,
-	filters?: number[],
-	withParam?: string[]
+	id: number,
+	limit: number,
+	page: number,
+	filters: number[],
+	withParam: []
 }
 export type CustomField = {
 	field_id: number,
@@ -40,19 +41,16 @@ export type DealRes = {
 	group_id: number,
 	status_id: number,
 	pipeline_id: number,
-	_embedded: {
-		contacts: [
-			{
-				id: number,
-				is_main: boolean,
-			}]
-	}
 }
 
 
 export type DealsUpdateData = {
 	id: number,
-	price: number
+	pipeline_id: number,
+	status_id: number,
+	closed_at: number,
+	loss_reason_id: number,
+	updated_by: number
 }
 
 export type ContactRes = {
@@ -61,12 +59,7 @@ export type ContactRes = {
 	first_name: string,
 	last_name: string,
 	responsible_user_id: number,
-	custom_fields_values: {
-		field_name: string,
-		values: [{
-			value: string
-		}]
-	}[]
+	custom_fields_values: {}[]
 }
 
 export type ContactsUpdateData = {
@@ -74,14 +67,4 @@ export type ContactsUpdateData = {
 	first_name: string,
 	last_name: string,
 	custom_fields_values: {}[]
-}
-
-export type RequestDealHandler = {
-	leads: {
-		update: [{
-
-			id: string,
-			custom_fields: object[]
-		}]
-	}
 }

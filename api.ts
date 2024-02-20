@@ -116,7 +116,7 @@ export default new class Api{
 	};
 
 	// Получить сделку по id
-	getDeal = this.authChecker<RequestQuery, DealRes>(({id, withParam = []}): Promise<DealRes> => {
+	getDeal = this.authChecker<RequestQuery, DealRes>((id, withParam = []): Promise<DealRes> => {
 		return axios
 			.get<DealRes>(
 				`${this.ROOT_PATH}/api/v4/leads/${id}?${querystring.encode({
