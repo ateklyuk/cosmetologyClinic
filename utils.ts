@@ -16,11 +16,11 @@ import {CustomField} from "./types";
  * @returns значение поля
  */
 
-export const getFieldValue = <T extends CustomField, U>(customFields: T[], fieldId: U): string | undefined => {
+export const getFieldValue = <T extends CustomField, U>(customFields: T[], fieldId: U): undefined | { value: string } => {
 	const field = customFields
 		? customFields.find((item) => String(item.field_id || item.id) === String(fieldId))
 		: undefined;
-	return field ? field.values[0].value : undefined;
+	return field && field.values[0];
 };
 
 /**
@@ -68,11 +68,11 @@ export const makeField = <T, U, K>(field_id: T, value: U, enum_id: K) => {
  * @param {*} chunkSize - размер chunkSize
  * @param {*} operationName - название операции
  */
-export const bulkOperation = async <T extends Array<string>>(
-	request: (args: string[]) => Promise<string>,
-	data: T,
+export const bulkOperation = async <T, U>(
+	request: (args: T[]) => Promise<U>,
+	data: T[],
 	chunkSize: number,
-	operationName: string = "bulk"
+	operationName = "bulk"
 ) => {
 	let failed = [];
 	if (data.length) {
@@ -108,7 +108,7 @@ export const bulkOperation = async <T extends Array<string>>(
  * @param {*} limit - лимит на количество элементов в ответе (по дефолту - 200)
  * @returns [ ...elements ] все элементы сущности аккаунта
  */
-export const getAllPages = async <T>(request: (args: {}) => Promise<string>, page = 1, limit = 200) => {
+export const getAllPages = async <T>(request: (args: {}) => Promise<T[]>, page = 1, limit = 200) => {
 	try {
 		console.log(`Загрузка страницы ${page}`);
 		const res = await request({ page, limit });

@@ -1,13 +1,14 @@
 import api from "../api";
-import {Request, Response} from "express";
+import {Request, RequestHandler, Response} from "express";
 import {getFieldValues} from "../utils";
+import {RequestDealHandler} from "../types";
 
 
-export default async function hookHandler<T, U>(req: Request<T>, res: Response<string>): Promise<unknown> {
+export const dealHandler =  async<T, U>(req: Request<T>, res: Response<string>): Promise<unknown> =>  {
 	try {
 		const {update} = req.body.leads
 		const [{id: dealId, custom_fields}] = update
-		const {_embedded, price} = await api.getDeal(dealId, ["contacts"])
+		const {_embedded, price} = await api.getDeal({id: dealId, withParam: ["contacts"]})
 		const {contacts} = _embedded
 		console.log("хук сработл")
 		let budget = 0;

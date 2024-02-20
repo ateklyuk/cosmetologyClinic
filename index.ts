@@ -7,7 +7,7 @@ import api from "./api";
 import {logger} from "./logger";
 import {config} from "./config";
 import {Request} from "express";
-import dealHandler from "./hookController/dealHandler"
+import {dealHandler} from "./hookController/dealHandler"
 
 const app = express();
 

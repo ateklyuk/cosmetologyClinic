@@ -9,7 +9,14 @@ import fs from "fs";
 import axiosRetry from "axios-retry";
 import {config} from "./config"
 import {logger} from "./logger";
-import {GetDealRes, GetDealsRes, GetTokenRes, Request} from "./types";
+import {
+	ContactRes,
+	ContactsUpdateData,
+	DealRes,
+	DealsUpdateData, PostTokenData,
+	RequestQuery,
+	Token
+} from "./types";
 
 axiosRetry(axios, { retries: 3, retryDelay: axiosRetry.exponentialDelay });
 
@@ -23,7 +30,7 @@ export default new class Api{
 	refresh_token: null | string = null;
 	ROOT_PATH: string = `https://${config.SUB_DOMAIN}.amocrm.ru`;
 
-	authChecker = <T, U>(request: (...args: T[]) => Promise<U>): ((...args: T[]) => Promise<U>) => {
+	authChecker = <T, U>(request: (args: T) => Promise<U>): ((args: T) => Promise<U>) => {
 		return (...args) => {
 			if (!this.access_token) {
 				return this.getAccessToken().then(() => this.authChecker(request)(...args));
@@ -46,9 +53,9 @@ export default new class Api{
 		};
 	};
 
-	requestAccessToken = () => {
+	requestAccessToken = (): Promise<Token> => {
 		return axios
-			.post<GetTokenRes>(`${this.ROOT_PATH}/oauth2/access_token`, {
+			.post<Token>(`${this.ROOT_PATH}/oauth2/access_token`, {
 				client_id: config.CLIENT_ID,
 				client_secret: config.CLIENT_SECRET,
 				grant_type: "authorization_code",
@@ -65,7 +72,7 @@ export default new class Api{
 			});
 	};
 
-	getAccessToken = async (): Promise<string > => {
+	getAccessToken = async (): Promise<string> => {
 		if (this.access_token) {
 			return Promise.resolve(this.access_token);
 		}
@@ -85,9 +92,9 @@ export default new class Api{
 			return Promise.resolve(token.access_token);
 		}
 	};
-	refreshToken = () =>  {
+	refreshToken = (): Promise<string> =>  {
 		return axios
-			.post<GetTokenRes>(`${this.ROOT_PATH}/oauth2/access_token`, {
+			.post(`${this.ROOT_PATH}/oauth2/access_token`, {
 				client_id: config.CLIENT_ID,
 				client_secret: config.CLIENT_SECRET,
 				grant_type: "refresh_token",
@@ -109,9 +116,9 @@ export default new class Api{
 	};
 
 	// Получить сделку по id
-	getDeal = this.authChecker((id, withParam: string[] = []) => {
+	getDeal = this.authChecker<RequestQuery, DealRes>(({id, withParam = []}): Promise<DealRes> => {
 		return axios
-			.get<GetDealRes>(
+			.get<DealRes>(
 				`${this.ROOT_PATH}/api/v4/leads/${id}?${querystring.encode({
 					with: withParam.join(","),
 				})}`,
@@ -124,7 +131,7 @@ export default new class Api{
 			.then((res) => res.data);
 	});
 	// Получить сделки по фильтрам
-	getDeals = this.authChecker<Request, GetDealsRes | {}>(({ page = 1, limit = LIMIT, filters }) => {
+	getDeals = this.authChecker<RequestQuery, DealRes[]>(({ page = 1, limit = LIMIT, filters }): Promise<DealRes[]> => {
 		const url = `${this.ROOT_PATH}/api/v4/leads?${querystring.stringify({
 			page,
 			limit,
@@ -133,7 +140,7 @@ export default new class Api{
 		})}`;
 
 		return axios
-			.get<GetDealsRes>(url, {
+			.get(url, {
 				headers: {
 					Authorization: `Bearer ${this.access_token}`,
 				},
@@ -144,7 +151,7 @@ export default new class Api{
 	});
 
 	// Обновить сделки
-	updateDeals = this.authChecker((data) => {
+	updateDeals = this.authChecker<DealsUpdateData, unknown>((data): Promise<unknown> => {
 		return axios.patch(`${this.ROOT_PATH}/api/v4/leads`, [data], {
 			headers: {
 				Authorization: `Bearer ${this.access_token}`,
@@ -153,9 +160,9 @@ export default new class Api{
 	});
 
 	// Получить контакт по id
-	getContact = this.authChecker((id) => {
+	getContact = this.authChecker<number, ContactRes>((id: number): Promise<ContactRes> => {
 		return axios
-			.get(`${this.ROOT_PATH}/api/v4/contacts/${id}?${querystring.stringify({
+			.get<ContactRes>(`${this.ROOT_PATH}/api/v4/contacts/${id}?${querystring.stringify({
 				with: ["leads"]
 			})}`, {
 				headers: {
@@ -166,7 +173,7 @@ export default new class Api{
 	});
 
 	// Обновить контакты
-	updateContacts = this.authChecker<Request, string>((data) => {
+	updateContacts = this.authChecker<ContactsUpdateData, unknown>((data): Promise<unknown> => {
 		return axios.patch(`${this.ROOT_PATH}/api/v4/contacts`, [data], {
 			headers: {
 				Authorization: `Bearer ${this.access_token}`,
