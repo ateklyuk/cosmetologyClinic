@@ -86,3 +86,11 @@ export type RequestDealHandler = {
 		}]
 	}
 }
+
+export type CreateTaskData = {
+	task_type_id: number
+	text: string,
+	complete_till: number,
+	entity_id: number,
+	entity_type: string
+}

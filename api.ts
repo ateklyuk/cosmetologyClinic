@@ -11,7 +11,7 @@ import {config} from "./config"
 import {logger} from "./logger";
 import {
 	ContactRes,
-	ContactsUpdateData,
+	ContactsUpdateData, CreateTaskData,
 	DealRes,
 	DealsUpdateData, PostTokenData,
 	RequestQuery,
@@ -151,7 +151,7 @@ export default new class Api{
 	});
 
 	// Обновить сделки
-	updateDeals = this.authChecker<DealsUpdateData, unknown>((data): Promise<unknown> => {
+	updateDeals = this.authChecker<DealsUpdateData, void>((data): Promise<void> => {
 		return axios.patch(`${this.ROOT_PATH}/api/v4/leads`, [data], {
 			headers: {
 				Authorization: `Bearer ${this.access_token}`,
@@ -173,8 +173,15 @@ export default new class Api{
 	});
 
 	// Обновить контакты
-	updateContacts = this.authChecker<ContactsUpdateData, unknown>((data): Promise<unknown> => {
+	updateContacts = this.authChecker<ContactsUpdateData, void>((data): Promise<void> => {
 		return axios.patch(`${this.ROOT_PATH}/api/v4/contacts`, [data], {
+			headers: {
+				Authorization: `Bearer ${this.access_token}`,
+			},
+		});
+	});
+	createTask = this.authChecker<CreateTaskData, unknown>((data): Promise<unknown> => {
+		return axios.post(`${this.ROOT_PATH}/api/v4/tasks`, [data], {
 			headers: {
 				Authorization: `Bearer ${this.access_token}`,
 			},
