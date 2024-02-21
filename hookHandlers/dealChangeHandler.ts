@@ -6,36 +6,33 @@ import {RequestDealHandler} from "../types";
 
 export const dealHandler = async <T, U>(req: Request<T>, res: Response<string>): Promise<unknown> => {
 	try {
+		const {_embedded: emb} = await api.getTasks([])
+		console.log(emb)
+		const today = Math.floor(new Date().getTime()/1000) + 86400
 		const {update} = req.body.leads
-
-		console.log(update);
-
-		const [{id: dealId, custom_fields}] = update
-		const {_embedded, price} = await api.getDeal({id: dealId, withParam: ["contacts"]})
+		const [{id: dealId}] = update
+		const {_embedded, price, custom_fields_values: dealCustomField} = await api.getDeal({id: dealId, withParam: ["contacts","is_price_modified_by_robot","catalog_elements"]})
 		const {contacts} = _embedded
-		console.log("хук сработл")
 		for (const contact of contacts) {
 			if (contact.is_main) {
-				console.log("is main")
-				const dealValues: string[] = custom_fields ? getFieldValues(custom_fields, custom_fields[0].id) : [];
+				const dealValues: string[] = dealCustomField ? getFieldValues(dealCustomField, dealCustomField[0].field_id) : [];
+				console.log(dealValues)
 				const {custom_fields_values} = await api.getContact(contact.id)
 				const budget = custom_fields_values.reduce(
 					function (acc, obj) {
 						return dealValues.includes(obj.field_name) ? acc + Number(obj.values[0].value) : acc
 					}, 0)
-				console.log(update[0])
 				if (price !== budget) {
-					console.log("price !== => await")
 					const data = {
 						id: Number(dealId),
-						price: budget,
-						modified_user_id: '5',
+						price: budget
 					};
 					await api.updateDeals(data)
+
 					await api.createTask({
-						task_type_id: 1,
-						text: "Встретиться с клиентом Иван Иванов",
-						complete_till: 1588885140,
+						task_type_id: 3267826,
+						text: "Проверить бюджет",
+						complete_till: today,
 						entity_id: 800719,
 						entity_type: "leads"
 					})
@@ -47,7 +44,7 @@ export const dealHandler = async <T, U>(req: Request<T>, res: Response<string>):
 		}
 	} catch (e: unknown) {
 		console.log(
-			'pizdec'
+			e
 		)
 		return res.send(JSON.stringify(e)).status(400);
 	}

@@ -34,6 +34,7 @@ export type Token = {
 }
 
 export type DealRes = {
+	custom_fields_values: CustomField[],
 	id: number,
 	name: string,
 	price: number,
@@ -80,7 +81,6 @@ export type ContactsUpdateData = {
 export type RequestDealHandler = {
 	leads: {
 		update: [{
-
 			id: string,
 			custom_fields: object[]
 		}]
@@ -88,8 +88,8 @@ export type RequestDealHandler = {
 }
 
 export type CreateTaskData = {
-	task_type_id: number
 	text: string,
+	task_type_id: number,
 	complete_till: number,
 	entity_id: number,
 	entity_type: string

@@ -26,11 +26,11 @@ const LIMIT = 200;
 
 
 export default new class Api{
-	access_token: null | string = null;
-	refresh_token: null | string = null;
-	ROOT_PATH: string = `https://${config.SUB_DOMAIN}.amocrm.ru`;
+	private access_token: null | string = null;
+	private refresh_token: null | string = null;
+	private ROOT_PATH: string = `https://${config.SUB_DOMAIN}.amocrm.ru`;
 
-	authChecker = <T, U>(request: (args: T) => Promise<U>): ((args: T) => Promise<U>) => {
+	private authChecker = <T, U>(request: (args: T) => Promise<U>): ((args: T) => Promise<U>) => {
 		return (...args) => {
 			if (!this.access_token) {
 				return this.getAccessToken().then(() => this.authChecker(request)(...args));
@@ -53,7 +53,7 @@ export default new class Api{
 		};
 	};
 
-	requestAccessToken = (): Promise<Token> => {
+	private requestAccessToken = (): Promise<Token> => {
 		return axios
 			.post<Token>(`${this.ROOT_PATH}/oauth2/access_token`, {
 				client_id: config.CLIENT_ID,
@@ -72,7 +72,7 @@ export default new class Api{
 			});
 	};
 
-	getAccessToken = async (): Promise<string> => {
+	public getAccessToken = async (): Promise<string> => {
 		if (this.access_token) {
 			return Promise.resolve(this.access_token);
 		}
@@ -92,7 +92,7 @@ export default new class Api{
 			return Promise.resolve(token.access_token);
 		}
 	};
-	refreshToken = (): Promise<string> =>  {
+	private refreshToken = (): Promise<string> =>  {
 		return axios
 			.post(`${this.ROOT_PATH}/oauth2/access_token`, {
 				client_id: config.CLIENT_ID,
@@ -116,7 +116,7 @@ export default new class Api{
 	};
 
 	// Получить сделку по id
-	getDeal = this.authChecker<RequestQuery, DealRes>(({id, withParam = []}): Promise<DealRes> => {
+	public getDeal = this.authChecker<RequestQuery, DealRes>(({id, withParam = []}): Promise<DealRes> => {
 		return axios
 			.get<DealRes>(
 				`${this.ROOT_PATH}/api/v4/leads/${id}?${querystring.encode({
@@ -131,7 +131,7 @@ export default new class Api{
 			.then((res) => res.data);
 	});
 	// Получить сделки по фильтрам
-	getDeals = this.authChecker<RequestQuery, DealRes[]>(({ page = 1, limit = LIMIT, filters }): Promise<DealRes[]> => {
+	public getDeals = this.authChecker<RequestQuery, DealRes[]>(({ page = 1, limit = LIMIT, filters }): Promise<DealRes[]> => {
 		const url = `${this.ROOT_PATH}/api/v4/leads?${querystring.stringify({
 			page,
 			limit,
@@ -151,7 +151,7 @@ export default new class Api{
 	});
 
 	// Обновить сделки
-	updateDeals = this.authChecker<DealsUpdateData, void>((data): Promise<void> => {
+	public updateDeals = this.authChecker<DealsUpdateData, void>((data): Promise<void> => {
 		return axios.patch(`${this.ROOT_PATH}/api/v4/leads`, [data], {
 			headers: {
 				Authorization: `Bearer ${this.access_token}`,
@@ -160,7 +160,7 @@ export default new class Api{
 	});
 
 	// Получить контакт по id
-	getContact = this.authChecker<number, ContactRes>((id: number): Promise<ContactRes> => {
+	public getContact = this.authChecker<number, ContactRes>((id: number): Promise<ContactRes> => {
 		return axios
 			.get<ContactRes>(`${this.ROOT_PATH}/api/v4/contacts/${id}?${querystring.stringify({
 				with: ["leads"]
@@ -173,15 +173,22 @@ export default new class Api{
 	});
 
 	// Обновить контакты
-	updateContacts = this.authChecker<ContactsUpdateData, void>((data): Promise<void> => {
+	public updateContacts = this.authChecker<ContactsUpdateData, void>((data): Promise<void> => {
 		return axios.patch(`${this.ROOT_PATH}/api/v4/contacts`, [data], {
 			headers: {
 				Authorization: `Bearer ${this.access_token}`,
 			},
 		});
 	});
-	createTask = this.authChecker<CreateTaskData, unknown>((data): Promise<unknown> => {
+	public createTask = this.authChecker<CreateTaskData, unknown>((data): Promise<unknown> => {
 		return axios.post(`${this.ROOT_PATH}/api/v4/tasks`, [data], {
+			headers: {
+				Authorization: `Bearer ${this.access_token}`,
+			},
+		});
+	});
+	public getTasks = this.authChecker((): Promise<{_embedded: { tasks: [] }} > => {
+		return axios.get(`${this.ROOT_PATH}/api/v4/tasks`, {
 			headers: {
 				Authorization: `Bearer ${this.access_token}`,
 			},

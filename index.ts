@@ -6,7 +6,6 @@ import express from "express";
 import api from "./api";
 import {logger} from "./logger";
 import {config} from "./config";
-import {Request} from "express";
 import {dealHandler} from "./hookHandlers/dealChangeHandler"
 
 const app = express();
