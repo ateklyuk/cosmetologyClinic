@@ -9,14 +9,8 @@ import fs from "fs";
 import axiosRetry from "axios-retry";
 import {config} from "./config"
 import {logger} from "./logger";
-import {
-	ContactRes,
-	ContactsUpdateData,
-	DealRes,
-	DealsUpdateData, PostTokenData,
-	RequestQuery,
-	Token
-} from "./types";
+import {ContactsUpdateData, DataType, DealRes, DealsUpdateData, RequestQuery, Token} from "./types";
+
 
 axiosRetry(axios, { retries: 3, retryDelay: axiosRetry.exponentialDelay });
 
@@ -26,11 +20,35 @@ const LIMIT = 200;
 
 
 export default new class Api{
-	access_token: null | string = null;
-	refresh_token: null | string = null;
-	ROOT_PATH: string = `https://${config.SUB_DOMAIN}.amocrm.ru`;
+	private access_token: null | string = null;
+	private refresh_token: null | string = null;
+	private defaultParams: object = {}
+	private defaultTimeout: number = 0
 
-	authChecker = <T, U>(request: (args: T) => Promise<U>): ((args: T) => Promise<U>) => {
+	private ROOT_PATH: string = `https://${config.SUB_DOMAIN}.amocrm.ru`;
+	private getConfig = (params?: object, timeout?: number) => {
+		return {
+			params: params ?? this.defaultParams,
+			headers: {
+				Authorization: `Bearer ${this.access_token}`,
+			},
+			timeout: timeout ?? this.defaultTimeout
+		}
+	}
+	private createData = (grant_type: string): object => {
+		const data: DataType = {
+			client_id: config.CLIENT_ID,
+			client_secret: config.CLIENT_SECRET,
+			redirect_uri: config.REDIRECT_URI,
+			grant_type: grant_type
+		}
+		if (grant_type === "refresh_token") {
+			data.refresh_token = this.refresh_token
+		} else data.code = config.AUTH_CODE
+		return data
+	}
+
+	private authChecker = <T, U>(request: (args: T) => Promise<U>): ((args: T) => Promise<U>) => {
 		return (...args) => {
 			if (!this.access_token) {
 				return this.getAccessToken().then(() => this.authChecker(request)(...args));
@@ -53,15 +71,9 @@ export default new class Api{
 		};
 	};
 
-	requestAccessToken = (): Promise<Token> => {
+	private requestAccessToken = (): Promise<Token> => {
 		return axios
-			.post<Token>(`${this.ROOT_PATH}/oauth2/access_token`, {
-				client_id: config.CLIENT_ID,
-				client_secret: config.CLIENT_SECRET,
-				grant_type: "authorization_code",
-				code: config.AUTH_CODE,
-				redirect_uri: config.REDIRECT_URI,
-			})
+			.post<Token>(`${this.ROOT_PATH}/oauth2/access_token`, this.createData("authorization_code"))
 			.then((res) => {
 				logger.debug("Свежий токен получен");
 				return res.data;
@@ -72,7 +84,7 @@ export default new class Api{
 			});
 	};
 
-	getAccessToken = async (): Promise<string> => {
+	public getAccessToken = async (): Promise<string> => {
 		if (this.access_token) {
 			return Promise.resolve(this.access_token);
 		}
@@ -92,15 +104,9 @@ export default new class Api{
 			return Promise.resolve(token.access_token);
 		}
 	};
-	refreshToken = (): Promise<string> =>  {
+	private refreshToken = (): Promise<string> => {
 		return axios
-			.post(`${this.ROOT_PATH}/oauth2/access_token`, {
-				client_id: config.CLIENT_ID,
-				client_secret: config.CLIENT_SECRET,
-				grant_type: "refresh_token",
-				refresh_token: this.refresh_token,
-				redirect_uri: config.REDIRECT_URI,
-			})
+			.post(`${this.ROOT_PATH}/oauth2/access_token`, this.createData("refresh_token"))
 			.then((res) => {
 				logger.debug("Токен успешно обновлен");
 				const token = res.data;
@@ -116,69 +122,46 @@ export default new class Api{
 	};
 
 	// Получить сделку по id
-	getDeal = this.authChecker<RequestQuery, DealRes>(({id, withParam = []}): Promise<DealRes> => {
+	public getDeal = this.authChecker<RequestQuery, DealRes>(({id, withParam = []}): Promise<DealRes> => {
 		return axios
 			.get<DealRes>(
 				`${this.ROOT_PATH}/api/v4/leads/${id}?${querystring.encode({
-					with: withParam.join(","),
-				})}`,
-				{
-					headers: {
-						Authorization: `Bearer ${this.access_token}`,
-					},
-				}
-			)
+					with: withParam.join(",")
+				})}`, this.getConfig())
 			.then((res) => res.data);
 	});
 	// Получить сделки по фильтрам
-	getDeals = this.authChecker<RequestQuery, DealRes[]>(({ page = 1, limit = LIMIT, filters }): Promise<DealRes[]> => {
+	public getDeals = this.authChecker<RequestQuery, DealRes[]>(({page = 1, limit = LIMIT, filters}): Promise<DealRes[]> => {
 		const url = `${this.ROOT_PATH}/api/v4/leads?${querystring.stringify({
 			page,
 			limit,
 			with: ["contacts"],
 			filters,
 		})}`;
-
 		return axios
-			.get(url, {
-				headers: {
-					Authorization: `Bearer ${this.access_token}`,
-				},
-			})
+			.get(url, this.getConfig())
 			.then((res) => {
 				return res.data ? res.data._embedded.leads : [];
 			});
 	});
 
 	// Обновить сделки
-	updateDeals = this.authChecker<DealsUpdateData, unknown>((data): Promise<unknown> => {
-		return axios.patch(`${this.ROOT_PATH}/api/v4/leads`, [data], {
-			headers: {
-				Authorization: `Bearer ${this.access_token}`,
-			},
-		});
+	public updateDeals = this.authChecker<DealsUpdateData, object>((data): Promise<{ _embedded:object }> => {
+		return axios.patch(`${this.ROOT_PATH}/api/v4/leads`, [data], this.getConfig());
 	});
 
 	// Получить контакт по id
-	getContact = this.authChecker<number, ContactRes>((id: number): Promise<ContactRes> => {
+	public getContact = this.authChecker<number, ContactsUpdateData>((id: number): Promise<ContactsUpdateData> => {
 		return axios
-			.get<ContactRes>(`${this.ROOT_PATH}/api/v4/contacts/${id}?${querystring.stringify({
+			.get<ContactsUpdateData>(`${this.ROOT_PATH}/api/v4/contacts/${id}?${querystring.stringify({
 				with: ["leads"]
-			})}`, {
-				headers: {
-					Authorization: `Bearer ${this.access_token}`,
-				},
-			})
+			})}`, this.getConfig())
 			.then((res) => res.data);
 	});
 
 	// Обновить контакты
-	updateContacts = this.authChecker<ContactsUpdateData, unknown>((data): Promise<unknown> => {
-		return axios.patch(`${this.ROOT_PATH}/api/v4/contacts`, [data], {
-			headers: {
-				Authorization: `Bearer ${this.access_token}`,
-			},
-		});
+	public updateContacts = this.authChecker<ContactsUpdateData, unknown>((data): Promise<unknown> => {
+		return axios.patch(`${this.ROOT_PATH}/api/v4/contacts`, [data], this.getConfig());
 	});
 
 }
