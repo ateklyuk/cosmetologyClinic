@@ -7,6 +7,7 @@ import api from "./api";
 import {logger} from "./logger";
 import {config} from "./config";
 import {dealHandler} from "./hookHandlers/dealChangeHandler"
+import {taskHandler} from "./hookHandlers/taskChangeHandler";
 
 const app = express();
 
@@ -16,6 +17,7 @@ api.getAccessToken().then(() => {
 	app.get("/ping", (req, res) => res.send("pong " + Date.now()));
 
 	app.post("/changedeal", dealHandler);
+	app.post("/changetask", taskHandler);
 
 	app.listen(config.PORT, () => logger.debug("Server started on ", config.PORT));
 });

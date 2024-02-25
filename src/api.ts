@@ -11,7 +11,7 @@ import {config} from "./config"
 import {logger} from "./logger";
 import {
 	ContactRes,
-	ContactsUpdateData, CreateTaskData,
+	ContactsUpdateData, CreateNoteData, CreateTaskData,
 	DealRes,
 	DealsUpdateData, PostTokenData,
 	RequestQuery,
@@ -187,8 +187,15 @@ export default new class Api{
 			},
 		});
 	});
-	public getTasks = this.authChecker((): Promise<{_embedded: { tasks: [] }} > => {
-		return axios.get(`${this.ROOT_PATH}/api/v4/tasks`, {
+	public createNote = this.authChecker<CreateNoteData, unknown>((data): Promise<unknown> => {
+		return axios.post(`${this.ROOT_PATH}/api/v4/leads/${data.entity_id}/notes`, [data], {
+			headers: {
+				Authorization: `Bearer ${this.access_token}`,
+			},
+		});
+	});
+	public getTasks = this.authChecker((entity_id): Promise<{ data: {_embedded: {tasks:{task_type_id: number}[]}} & string}> => {
+		return axios.get(`${this.ROOT_PATH}/api/v4/tasks?filter[is_completed]=0&filter[entity_id]=${entity_id}`, {
 			headers: {
 				Authorization: `Bearer ${this.access_token}`,
 			},

@@ -94,3 +94,10 @@ export type CreateTaskData = {
 	entity_id: number,
 	entity_type: string
 }
+export type CreateNoteData = {
+	entity_id: number,
+	note_type: string,
+	params: {
+		text: string
+	}
+}
