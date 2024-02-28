@@ -4,7 +4,6 @@
  */
 
 import axios from "axios"
-import querystring from "querystring";
 import fs from "fs";
 import axiosRetry from "axios-retry";
 import {config} from "./config"
@@ -23,7 +22,7 @@ export default new class Api{
 	private access_token: null | string = null;
 	private refresh_token: null | string = null;
 	private defaultParams: object = {}
-	private defaultTimeout: number = 0
+	private defaultTimeout: number = 10000
 
 	private ROOT_PATH: string = `https://${config.SUB_DOMAIN}.amocrm.ru`;
 	private getConfig = (params?: object, timeout?: number) => {
@@ -35,7 +34,7 @@ export default new class Api{
 			timeout: timeout ?? this.defaultTimeout
 		}
 	}
-	private createData = (grant_type: string): object => {
+	private createData = (grant_type: string): DataType => {
 		const data: DataType = {
 			client_id: config.CLIENT_ID,
 			client_secret: config.CLIENT_SECRET,
@@ -125,21 +124,15 @@ export default new class Api{
 	public getDeal = this.authChecker<RequestQuery, DealRes>(({id, withParam = []}): Promise<DealRes> => {
 		return axios
 			.get<DealRes>(
-				`${this.ROOT_PATH}/api/v4/leads/${id}?${querystring.encode({
-					with: withParam.join(",")
-				})}`, this.getConfig())
+				`${this.ROOT_PATH}/api/v4/leads/${id}?`,
+				this.getConfig({with: withParam.join(",")}))
 			.then((res) => res.data);
 	});
 	// Получить сделки по фильтрам
 	public getDeals = this.authChecker<RequestQuery, DealRes[]>(({page = 1, limit = LIMIT, filters}): Promise<DealRes[]> => {
-		const url = `${this.ROOT_PATH}/api/v4/leads?${querystring.stringify({
-			page,
-			limit,
-			with: ["contacts"],
-			filters,
-		})}`;
+		const url = `${this.ROOT_PATH}/api/v4/leads`
 		return axios
-			.get(url, this.getConfig())
+			.get(url, this.getConfig({page, limit, with: ["contacts"], filters}))
 			.then((res) => {
 				return res.data ? res.data._embedded.leads : [];
 			});
@@ -153,9 +146,7 @@ export default new class Api{
 	// Получить контакт по id
 	public getContact = this.authChecker<number, ContactsUpdateData>((id: number): Promise<ContactsUpdateData> => {
 		return axios
-			.get<ContactsUpdateData>(`${this.ROOT_PATH}/api/v4/contacts/${id}?${querystring.stringify({
-				with: ["leads"]
-			})}`, this.getConfig())
+			.get<ContactsUpdateData>(`${this.ROOT_PATH}/api/v4/contacts/${id}`, this.getConfig({with: ["leads"]}))
 			.then((res) => res.data);
 	});
 

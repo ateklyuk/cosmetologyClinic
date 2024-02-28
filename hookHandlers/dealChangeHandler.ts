@@ -1,10 +1,9 @@
 import api from "../api";
-import {Request, RequestHandler, Response} from "express";
+import {Request, Response} from "express";
 import {getFieldValues} from "../utils";
-import {RequestDealHandler} from "../types";
 
 
-export const dealHandler = async <T, U>(req: Request<T>, res: Response<string>): Promise<unknown> => {
+export const dealHandler = async <T, U>(req: Request<T>, res: Response): Promise<Response> => {
 	try {
 		const {update} = req.body.leads
 		const [{id: dealId}] = update
@@ -12,10 +11,11 @@ export const dealHandler = async <T, U>(req: Request<T>, res: Response<string>):
 		const {contacts} = _embedded
 		for (const contact of contacts) {
 			if (contact.is_main) {
-				const dealValues = dealCustomField ? getFieldValues(dealCustomField, dealCustomField[0].field_id) : [];
+				const fieldId = dealCustomField ? dealCustomField.filter(item => item.field_name === "Услуги")[0].field_id : null
+				const dealValues = dealCustomField ? getFieldValues(dealCustomField, fieldId) : [];
 				const {custom_fields_values} = await api.getContact(contact.id)
 				const budget = custom_fields_values.reduce((acc, obj) => {
-						return dealValues.includes(obj.field_name) ? acc + Number(obj.values[0].value) : acc}, 0)
+						return dealValues.includes(obj.field_name) ? acc + Number(getFieldValues([obj], obj.field_id)[0]) : acc}, 0)
 				if (price === budget) {
 					return res.send("бюджет не поменялся").status(200)
 				}
