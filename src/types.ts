@@ -16,14 +16,6 @@ export type DataType = {
 	refresh_token?: string | null,
 }
 
-export type PostTokenData = {
-	client_id: string,
-	client_secret: string,
-	grant_type: string,
-	refresh_token: string,
-	redirect_uri: string,
-}
-
 export type RequestQuery = {
 	id?: number,
 	limit?: number,
@@ -66,20 +58,11 @@ export type DealsUpdateData = {
 	price: number
 }
 
-export type ContactRes = {
-	id: number,
-	name: string,
-	first_name: string,
-	last_name: string,
-	responsible_user_id: number,
-	custom_fields_values: CustomField[]
-}
-
 export type ContactsUpdateData = {
 	id: number,
 	first_name: string,
 	last_name: string,
-	custom_fields_values: {}[]
+	custom_fields_values: CustomField[]
 }
 
 export type RequestDealHandler = {
@@ -105,6 +88,7 @@ export type CreateNoteData = {
 		text: string
 	}
 }
+
 export type FieldsResponse = {
 	field_id: number,
 	values:
@@ -129,3 +113,4 @@ export type NoteData = {
 		text: string
 	}
 }
+

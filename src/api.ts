@@ -4,19 +4,22 @@
  */
 
 import axios from "axios"
-import querystring from "querystring";
 import fs from "fs";
 import axiosRetry from "axios-retry";
 import {config} from "./config"
 import {logger} from "./logger";
+
 import {
-	ContactRes,
-	ContactsUpdateData, CreateNoteData, CreateTaskData, DataType,
+	ContactsUpdateData,
+	CreateNoteData,
+	CreateTaskData,
+	DataType,
 	DealRes,
-	DealsUpdateData, PostTokenData,
+	DealsUpdateData,
 	RequestQuery,
 	Token
 } from "./types";
+
 
 axiosRetry(axios, { retries: 3, retryDelay: axiosRetry.exponentialDelay });
 
@@ -41,7 +44,8 @@ export default new class Api{
 			timeout: timeout ?? this.defaultTimeout
 		}
 	}
-	private createData = (grant_type: string): object => {
+
+	private createData = (grant_type: string): DataType => {
 		const data: DataType = {
 			client_id: config.CLIENT_ID,
 			client_secret: config.CLIENT_SECRET,
@@ -152,9 +156,10 @@ export default new class Api{
 	});
 
 	// Получить контакт по id
-	public getContact = this.authChecker<number, ContactRes>((id: number): Promise<ContactRes> => {
+
+	public getContact = this.authChecker<number, ContactsUpdateData>((id: number): Promise<ContactsUpdateData> => {
 		return axios
-			.get<ContactRes>(`${this.ROOT_PATH}/api/v4/contacts/${id}`, this.getConfig({with: ["leads"]}))
+			.get<ContactsUpdateData>(`${this.ROOT_PATH}/api/v4/contacts/${id}`, this.getConfig({with: ["leads"]}))
 			.then((res) => res.data);
 	});
 
