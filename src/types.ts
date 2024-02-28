@@ -7,6 +7,14 @@ export type Config = {
 	SUB_DOMAIN: string,
 	PORT: number
 }
+export type DataType = {
+	client_id: string,
+	client_secret: string,
+	redirect_uri: string,
+	grant_type: string,
+	code?: string,
+	refresh_token?: string | null,
+}
 
 export type PostTokenData = {
 	client_id: string,
@@ -25,6 +33,7 @@ export type RequestQuery = {
 }
 export type CustomField = {
 	field_id: number,
+	field_name: string,
 	id: number,
 	values: { value: string }[],
 }
@@ -63,12 +72,7 @@ export type ContactRes = {
 	first_name: string,
 	last_name: string,
 	responsible_user_id: number,
-	custom_fields_values: {
-		field_name: string,
-		values: [{
-			value: string
-		}]
-	}[]
+	custom_fields_values: CustomField[]
 }
 
 export type ContactsUpdateData = {
@@ -95,6 +99,30 @@ export type CreateTaskData = {
 	entity_type: string
 }
 export type CreateNoteData = {
+	entity_id: number,
+	note_type: string,
+	params: {
+		text: string
+	}
+}
+export type FieldsResponse = {
+	field_id: number,
+	values:
+		[
+			{
+				value: unknown,
+				enum_id: number
+			}]
+}
+
+export type TaskData = {
+	task_type_id: number,
+	text: string,
+	complete_till: number,
+	entity_id: number,
+	entity_type: string
+}
+export type NoteData = {
 	entity_id: number,
 	note_type: string,
 	params: {

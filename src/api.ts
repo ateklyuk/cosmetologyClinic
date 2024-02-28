@@ -11,7 +11,7 @@ import {config} from "./config"
 import {logger} from "./logger";
 import {
 	ContactRes,
-	ContactsUpdateData, CreateNoteData, CreateTaskData,
+	ContactsUpdateData, CreateNoteData, CreateTaskData, DataType,
 	DealRes,
 	DealsUpdateData, PostTokenData,
 	RequestQuery,
@@ -28,7 +28,31 @@ const LIMIT = 200;
 export default new class Api{
 	private access_token: null | string = null;
 	private refresh_token: null | string = null;
+	private defaultParams: object = {}
+	private defaultTimeout: number = 10000
+
 	private ROOT_PATH: string = `https://${config.SUB_DOMAIN}.amocrm.ru`;
+	private getConfig = (params?: object, timeout?: number) => {
+		return {
+			params: params ?? this.defaultParams,
+			headers: {
+				Authorization: `Bearer ${this.access_token}`,
+			},
+			timeout: timeout ?? this.defaultTimeout
+		}
+	}
+	private createData = (grant_type: string): object => {
+		const data: DataType = {
+			client_id: config.CLIENT_ID,
+			client_secret: config.CLIENT_SECRET,
+			redirect_uri: config.REDIRECT_URI,
+			grant_type: grant_type
+		}
+		if (grant_type === "refresh_token") {
+			data.refresh_token = this.refresh_token
+		} else data.code = config.AUTH_CODE
+		return data
+	}
 
 	private authChecker = <T, U>(request: (args: T) => Promise<U>): ((args: T) => Promise<U>) => {
 		return (...args) => {
@@ -55,13 +79,7 @@ export default new class Api{
 
 	private requestAccessToken = (): Promise<Token> => {
 		return axios
-			.post<Token>(`${this.ROOT_PATH}/oauth2/access_token`, {
-				client_id: config.CLIENT_ID,
-				client_secret: config.CLIENT_SECRET,
-				grant_type: "authorization_code",
-				code: config.AUTH_CODE,
-				redirect_uri: config.REDIRECT_URI,
-			})
+			.post<Token>(`${this.ROOT_PATH}/oauth2/access_token`, this.createData("authorization_code"))
 			.then((res) => {
 				logger.debug("Свежий токен получен");
 				return res.data;
@@ -92,15 +110,10 @@ export default new class Api{
 			return Promise.resolve(token.access_token);
 		}
 	};
-	private refreshToken = (): Promise<string> =>  {
+
+	private refreshToken = (): Promise<string> => {
 		return axios
-			.post(`${this.ROOT_PATH}/oauth2/access_token`, {
-				client_id: config.CLIENT_ID,
-				client_secret: config.CLIENT_SECRET,
-				grant_type: "refresh_token",
-				refresh_token: this.refresh_token,
-				redirect_uri: config.REDIRECT_URI,
-			})
+			.post(`${this.ROOT_PATH}/oauth2/access_token`, this.createData("refresh_token"))
 			.then((res) => {
 				logger.debug("Токен успешно обновлен");
 				const token = res.data;
@@ -119,32 +132,15 @@ export default new class Api{
 	public getDeal = this.authChecker<RequestQuery, DealRes>(({id, withParam = []}): Promise<DealRes> => {
 		return axios
 			.get<DealRes>(
-				`${this.ROOT_PATH}/api/v4/leads/${id}?${querystring.encode({
-					with: withParam.join(","),
-				})}`,
-				{
-					headers: {
-						Authorization: `Bearer ${this.access_token}`,
-					},
-				}
-			)
+				`${this.ROOT_PATH}/api/v4/leads/${id}?`,
+				this.getConfig({with: withParam.join(",")}))
 			.then((res) => res.data);
 	});
 	// Получить сделки по фильтрам
-	public getDeals = this.authChecker<RequestQuery, DealRes[]>(({ page = 1, limit = LIMIT, filters }): Promise<DealRes[]> => {
-		const url = `${this.ROOT_PATH}/api/v4/leads?${querystring.stringify({
-			page,
-			limit,
-			with: ["contacts"],
-			filters,
-		})}`;
-
+	public getDeals = this.authChecker<RequestQuery, DealRes[]>(({page = 1, limit = LIMIT, filters}): Promise<DealRes[]> => {
+		const url = `${this.ROOT_PATH}/api/v4/leads`
 		return axios
-			.get(url, {
-				headers: {
-					Authorization: `Bearer ${this.access_token}`,
-				},
-			})
+			.get(url, this.getConfig({page, limit, with: ["contacts"], filters}))
 			.then((res) => {
 				return res.data ? res.data._embedded.leads : [];
 			});
@@ -152,54 +148,29 @@ export default new class Api{
 
 	// Обновить сделки
 	public updateDeals = this.authChecker<DealsUpdateData, void>((data): Promise<void> => {
-		return axios.patch(`${this.ROOT_PATH}/api/v4/leads`, [data], {
-			headers: {
-				Authorization: `Bearer ${this.access_token}`,
-			},
-		});
+		return axios.patch(`${this.ROOT_PATH}/api/v4/leads`, [data], this.getConfig());
 	});
 
 	// Получить контакт по id
 	public getContact = this.authChecker<number, ContactRes>((id: number): Promise<ContactRes> => {
 		return axios
-			.get<ContactRes>(`${this.ROOT_PATH}/api/v4/contacts/${id}?${querystring.stringify({
-				with: ["leads"]
-			})}`, {
-				headers: {
-					Authorization: `Bearer ${this.access_token}`,
-				},
-			})
+			.get<ContactRes>(`${this.ROOT_PATH}/api/v4/contacts/${id}`, this.getConfig({with: ["leads"]}))
 			.then((res) => res.data);
 	});
 
 	// Обновить контакты
-	public updateContacts = this.authChecker<ContactsUpdateData, void>((data): Promise<void> => {
-		return axios.patch(`${this.ROOT_PATH}/api/v4/contacts`, [data], {
-			headers: {
-				Authorization: `Bearer ${this.access_token}`,
-			},
-		});
+	public updateContacts = this.authChecker<ContactsUpdateData, unknown>((data): Promise<unknown> => {
+		return axios.patch(`${this.ROOT_PATH}/api/v4/contacts`, [data], this.getConfig());
 	});
+
 	public createTask = this.authChecker<CreateTaskData, unknown>((data): Promise<unknown> => {
-		return axios.post(`${this.ROOT_PATH}/api/v4/tasks`, [data], {
-			headers: {
-				Authorization: `Bearer ${this.access_token}`,
-			},
-		});
+		return axios.post(`${this.ROOT_PATH}/api/v4/tasks`, [data], this.getConfig());
 	});
 	public createNote = this.authChecker<CreateNoteData, unknown>((data): Promise<unknown> => {
-		return axios.post(`${this.ROOT_PATH}/api/v4/leads/${data.entity_id}/notes`, [data], {
-			headers: {
-				Authorization: `Bearer ${this.access_token}`,
-			},
-		});
+		return axios.post(`${this.ROOT_PATH}/api/v4/leads/${data.entity_id}/notes`, [data], this.getConfig());
 	});
 	public getTasks = this.authChecker((entity_id): Promise<{ data: {_embedded: {tasks:{task_type_id: number}[]}} & string}> => {
-		return axios.get(`${this.ROOT_PATH}/api/v4/tasks?filter[is_completed]=0&filter[entity_id]=${entity_id}`, {
-			headers: {
-				Authorization: `Bearer ${this.access_token}`,
-			},
-		});
+		return axios.get(`${this.ROOT_PATH}/api/v4/tasks`, this.getConfig({"filter[is_completed]": 0, "filter[entity_id]": entity_id}));
 	});
 
 }
