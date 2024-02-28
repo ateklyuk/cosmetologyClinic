@@ -5,7 +5,7 @@
   "main": "index.ts",
   "scripts": {
 		"build" : "tsc",
-    "start": "node build/index.js",
+    "start": "tsc && node build/index.js",
     "test": "eslint ./"
   },
   "author": "Reon",
