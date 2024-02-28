@@ -1,26 +1,21 @@
 import api from "../api";
 import {Request, Response} from "express";
 import {getFieldValues} from "../utils";
-import {RequestDealHandler, TaskData} from "../types";
-
-const taskTypeId = 3267826
-const entityId = 800719
-const entityType = "leads"
-const today = Math.floor(new Date().getTime() / 1000) + 86400
-const createTaskData: TaskData = {
-	task_type_id: taskTypeId,
-	text: "Проверить бюджет",
-	complete_till: today,
-	entity_id: entityId,
-	entity_type: entityType
-}
+import {ENTITY_TYPE, ONE_DAY_TIME_UNIX, TASK_TYPE_ID} from "../../consts/consts";
 
 export const dealHandler = async <T, U>(req: Request<T>, res: Response): Promise<Response> => {
 	try {
 		const {update} = req.body.leads
 		const [{id: dealId}] = update
+		const createTaskData = {
+			task_type_id: TASK_TYPE_ID,
+			text: "Проверить бюджет",
+			complete_till: ONE_DAY_TIME_UNIX,
+			entity_id: Number(dealId),
+			entity_type: ENTITY_TYPE
+		}
 		const {_embedded, price, custom_fields_values: dealCustomField} = await api.getDeal({
-			id: dealId,
+			id: Number(dealId),
 			withParam: ["contacts", "is_price_modified_by_robot", "catalog_elements"]
 		})
 		const {contacts} = _embedded
@@ -29,8 +24,8 @@ export const dealHandler = async <T, U>(req: Request<T>, res: Response): Promise
 				const fieldId = dealCustomField ? dealCustomField.filter(item => item.field_name === "Услуги")[0].field_id : null
 				const dealValues = dealCustomField ? getFieldValues(dealCustomField, fieldId) : [];
 				const {custom_fields_values} = await api.getContact(contact.id)
-				const budget = custom_fields_values.reduce((acc, obj) => {
-					return dealValues.includes(obj.field_name) ? acc + Number(getFieldValues([obj], obj.field_id)[0]) : acc}, 0)
+				const budget = custom_fields_values.reduce((acc, custom_field) => {
+					return dealValues.includes(custom_field.field_name) ? acc + Number(getFieldValues([custom_field], custom_field.field_id)[0]) : acc}, 0)
 				if (price === budget) {
 					return res.send("Бюджет не изменился").status(200)
 				}
@@ -39,16 +34,14 @@ export const dealHandler = async <T, U>(req: Request<T>, res: Response): Promise
 					price: budget
 				};
 				await api.updateDeals(data)
-				const task = await api.getTasks(entityId)
-				if (task.data === '') {
+				const task = await api.getTasks(Number(dealId))
+				if (!task.data) {
 					await api.createTask(createTaskData)
 					return res.send("Тасок нет, поэтому создана").status(200)
 				}
-				if (task.data !== '') {
-					const {tasks} = task.data._embedded
-					if (!tasks.find(task => task.task_type_id === taskTypeId)) {
-						await api.createTask(createTaskData)
-					}
+				const {tasks} = task.data._embedded
+				if (!tasks.find(task => task.task_type_id === TASK_TYPE_ID)) {
+					await api.createTask(createTaskData)
 				}
 				return res.send("OK").status(200)
 			}

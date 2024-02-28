@@ -1,4 +1,3 @@
-
 export type Config = {
 	CLIENT_ID: string,
 	CLIENT_SECRET: string,
@@ -99,18 +98,77 @@ export type FieldsResponse = {
 			}]
 }
 
-export type TaskData = {
-	task_type_id: number,
-	text: string,
-	complete_till: number,
-	entity_id: number,
-	entity_type: string
-}
-export type NoteData = {
-	entity_id: number,
-	note_type: string,
-	params: {
-		text: string
+export type GetTasksResponse = {
+	data: {
+		_embedded: {
+			tasks: {
+				task_type_id:
+					number
+			}[]
+		}
 	}
+	& string
 }
 
+export type CreateTaskResponse = {
+	_links: {
+		self: {
+			href: string
+		}
+	},
+	_embedded: {
+		tasks: [
+			{
+				id: number,
+				request_id: string,
+				_links: {
+					self: {
+						href: string
+					}
+				}
+			}
+		]
+	}
+}
+export type CreateNoteResponse = {
+	_links: {
+		self: {
+			href: string
+		}
+	},
+	_embedded: {
+		notes: [
+			{
+				id: number,
+				entity_id: number,
+				request_id: string,
+				_links: {
+					"self": {
+						"href": string
+					}
+				}
+			}
+		]
+	}
+}
+export type UpdateContactsResponse = {
+	_links: {
+		self: {
+			href: string
+		}
+	},
+	_embedded: {
+		contacts: [
+			{
+				id: number,
+				name: string,
+				updated_at: number,
+				_links: {
+					self: {
+						href: string
+					}
+				}
+			}
+		]
+	}
+}

@@ -11,13 +11,13 @@ import {logger} from "./logger";
 
 import {
 	ContactsUpdateData,
-	CreateNoteData,
-	CreateTaskData,
+	CreateNoteData, CreateNoteResponse,
+	CreateTaskData, CreateTaskResponse,
 	DataType,
 	DealRes,
-	DealsUpdateData,
+	DealsUpdateData, GetTasksResponse,
 	RequestQuery,
-	Token
+	Token, UpdateContactsResponse
 } from "./types";
 
 
@@ -164,17 +164,17 @@ export default new class Api{
 	});
 
 	// Обновить контакты
-	public updateContacts = this.authChecker<ContactsUpdateData, unknown>((data): Promise<unknown> => {
+	public updateContacts = this.authChecker<ContactsUpdateData, UpdateContactsResponse>((data): Promise<UpdateContactsResponse> => {
 		return axios.patch(`${this.ROOT_PATH}/api/v4/contacts`, [data], this.getConfig());
 	});
 
-	public createTask = this.authChecker<CreateTaskData, unknown>((data): Promise<unknown> => {
+	public createTask = this.authChecker<CreateTaskData, CreateTaskResponse>((data): Promise<CreateTaskResponse> => {
 		return axios.post(`${this.ROOT_PATH}/api/v4/tasks`, [data], this.getConfig());
 	});
-	public createNote = this.authChecker<CreateNoteData, unknown>((data): Promise<unknown> => {
+	public createNote = this.authChecker<CreateNoteData, CreateNoteResponse>((data): Promise<CreateNoteResponse> => {
 		return axios.post(`${this.ROOT_PATH}/api/v4/leads/${data.entity_id}/notes`, [data], this.getConfig());
 	});
-	public getTasks = this.authChecker((entity_id): Promise<{ data: {_embedded: {tasks:{task_type_id: number}[]}} & string}> => {
+	public getTasks = this.authChecker<number, GetTasksResponse>((entity_id): Promise<GetTasksResponse> => {
 		return axios.get(`${this.ROOT_PATH}/api/v4/tasks`, this.getConfig({"filter[is_completed]": 0, "filter[entity_id]": entity_id}));
 	});
 
