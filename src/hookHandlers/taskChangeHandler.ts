@@ -1,6 +1,6 @@
 import {Request, Response} from "express";
 import api from "../api";
-import { TASK_TEXT, TASK_TYPE_ID } from "../../consts/consts";
+import { TASK_TEXT, TASK_TYPE_ID } from "../consts/consts";
 
 export const taskHandler = async <T,U>(req: Request<T>, res: Response): Promise<Response> => {
 	try {

@@ -1,7 +1,7 @@
 import api from "../api";
 import {Request, Response} from "express";
 import {getFieldValues} from "../utils";
-import {ENTITY_TYPE, ONE_DAY_TIME_UNIX, TASK_TYPE_ID} from "../../consts/consts";
+import {ENTITY_TYPE, ONE_DAY_TIME_UNIX, TASK_TYPE_ID} from "../consts/consts";
 
 export const dealHandler = async <T, U>(req: Request<T>, res: Response): Promise<Response> => {
 	try {
