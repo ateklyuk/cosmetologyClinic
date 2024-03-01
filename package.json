@@ -2,10 +2,9 @@
   "name": "boilerplates",
   "version": "1.0.2",
   "description": "code templates for development",
-  "main": "index.ts",
+  "main": "src/index.ts",
   "scripts": {
-		"build" : "tsc",
-    "start": "tsc && node build/index.js",
+    "dev": "npx nodemon",
     "test": "eslint ./"
   },
   "author": "Reon",
@@ -21,6 +20,8 @@
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^20.11.17",
-    "eslint": "^8.14.0"
+    "eslint": "^8.14.0",
+    "nodemon": "^3.0.3",
+    "ts-node": "^10.9.2"
   }
 }

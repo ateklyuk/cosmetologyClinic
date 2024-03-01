@@ -8,7 +8,17 @@ import fs from "fs";
 import axiosRetry from "axios-retry";
 import {config} from "./config"
 import {logger} from "./logger";
-import {ContactsUpdateData, DataType, DealRes, DealsUpdateData, RequestQuery, Token} from "./types";
+
+import {
+	ContactsUpdateData,
+	CreateNoteData, CreateNoteResponse,
+	CreateTaskData, CreateTaskResponse,
+	DataType,
+	DealRes,
+	DealsUpdateData, GetTasksResponse,
+	RequestQuery,
+	Token, UpdateContactsResponse
+} from "./types";
 
 
 axiosRetry(axios, { retries: 3, retryDelay: axiosRetry.exponentialDelay });
@@ -34,6 +44,7 @@ export default new class Api{
 			timeout: timeout ?? this.defaultTimeout
 		}
 	}
+
 	private createData = (grant_type: string): DataType => {
 		const data: DataType = {
 			client_id: config.CLIENT_ID,
@@ -103,6 +114,7 @@ export default new class Api{
 			return Promise.resolve(token.access_token);
 		}
 	};
+
 	private refreshToken = (): Promise<string> => {
 		return axios
 			.post(`${this.ROOT_PATH}/oauth2/access_token`, this.createData("refresh_token"))
@@ -139,11 +151,12 @@ export default new class Api{
 	});
 
 	// Обновить сделки
-	public updateDeals = this.authChecker<DealsUpdateData, object>((data): Promise<{ _embedded:object }> => {
+	public updateDeals = this.authChecker<DealsUpdateData, void>((data): Promise<void> => {
 		return axios.patch(`${this.ROOT_PATH}/api/v4/leads`, [data], this.getConfig());
 	});
 
 	// Получить контакт по id
+
 	public getContact = this.authChecker<number, ContactsUpdateData>((id: number): Promise<ContactsUpdateData> => {
 		return axios
 			.get<ContactsUpdateData>(`${this.ROOT_PATH}/api/v4/contacts/${id}`, this.getConfig({with: ["leads"]}))
@@ -151,8 +164,18 @@ export default new class Api{
 	});
 
 	// Обновить контакты
-	public updateContacts = this.authChecker<ContactsUpdateData, unknown>((data): Promise<unknown> => {
+	public updateContacts = this.authChecker<ContactsUpdateData, UpdateContactsResponse>((data): Promise<UpdateContactsResponse> => {
 		return axios.patch(`${this.ROOT_PATH}/api/v4/contacts`, [data], this.getConfig());
+	});
+
+	public createTask = this.authChecker<CreateTaskData, CreateTaskResponse>((data): Promise<CreateTaskResponse> => {
+		return axios.post(`${this.ROOT_PATH}/api/v4/tasks`, [data], this.getConfig());
+	});
+	public createNote = this.authChecker<CreateNoteData, CreateNoteResponse>((data): Promise<CreateNoteResponse> => {
+		return axios.post(`${this.ROOT_PATH}/api/v4/leads/${data.entity_id}/notes`, [data], this.getConfig());
+	});
+	public getTasks = this.authChecker<number, GetTasksResponse>((entity_id): Promise<GetTasksResponse> => {
+		return axios.get(`${this.ROOT_PATH}/api/v4/tasks`, this.getConfig({"filter[is_completed]": 0, "filter[entity_id]": entity_id}));
 	});
 
 }

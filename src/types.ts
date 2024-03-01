@@ -1,4 +1,3 @@
-
 export type Config = {
 	CLIENT_ID: string,
 	CLIENT_SECRET: string,
@@ -15,7 +14,6 @@ export type DataType = {
 	code?: string,
 	refresh_token?: string | null,
 }
-
 
 export type RequestQuery = {
 	id?: number,
@@ -36,7 +34,7 @@ export type Token = {
 }
 
 export type DealRes = {
-	custom_fields_values: CustomField[]
+	custom_fields_values: CustomField[],
 	id: number,
 	name: string,
 	price: number,
@@ -59,15 +57,6 @@ export type DealsUpdateData = {
 	price: number
 }
 
-export type ContactRes = {
-	id: number,
-	name: string,
-	first_name: string,
-	last_name: string,
-	responsible_user_id: number,
-	custom_fields_values: CustomField[]
-}
-
 export type ContactsUpdateData = {
 	id: number,
 	first_name: string,
@@ -78,12 +67,27 @@ export type ContactsUpdateData = {
 export type RequestDealHandler = {
 	leads: {
 		update: [{
-
 			id: string,
 			custom_fields: object[]
 		}]
 	}
 }
+
+export type CreateTaskData = {
+	text: string,
+	task_type_id: number,
+	complete_till: number,
+	entity_id: number,
+	entity_type: string
+}
+export type CreateNoteData = {
+	entity_id: number,
+	note_type: string,
+	params: {
+		text: string
+	}
+}
+
 export type FieldsResponse = {
 	field_id: number,
 	values:
@@ -92,4 +96,79 @@ export type FieldsResponse = {
 				value: unknown,
 				enum_id: number
 			}]
+}
+
+export type GetTasksResponse = {
+	data: {
+		_embedded: {
+			tasks: {
+				task_type_id:
+					number
+			}[]
+		}
+	}
+	& string
+}
+
+export type CreateTaskResponse = {
+	_links: {
+		self: {
+			href: string
+		}
+	},
+	_embedded: {
+		tasks: [
+			{
+				id: number,
+				request_id: string,
+				_links: {
+					self: {
+						href: string
+					}
+				}
+			}
+		]
+	}
+}
+export type CreateNoteResponse = {
+	_links: {
+		self: {
+			href: string
+		}
+	},
+	_embedded: {
+		notes: [
+			{
+				id: number,
+				entity_id: number,
+				request_id: string,
+				_links: {
+					"self": {
+						"href": string
+					}
+				}
+			}
+		]
+	}
+}
+export type UpdateContactsResponse = {
+	_links: {
+		self: {
+			href: string
+		}
+	},
+	_embedded: {
+		contacts: [
+			{
+				id: number,
+				name: string,
+				updated_at: number,
+				_links: {
+					self: {
+						href: string
+					}
+				}
+			}
+		]
+	}
 }
